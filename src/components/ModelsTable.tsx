@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Plus, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
+import { toast } from "@/hooks/use-toast";
 
 interface Model {
   id: string;
@@ -59,6 +61,9 @@ export const ModelsTable = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("updatedAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState<Model | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -67,6 +72,31 @@ export const ModelsTable = () => {
       setSortField(field);
       setSortDirection("asc");
     }
+  };
+
+  const handleDeleteClick = (model: Model, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModelToDelete(model);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!modelToDelete) return;
+
+    setIsDeleting(true);
+    // Mock API call - replace with actual API call later
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toast({
+      title: "Модель удалена",
+      description: `Модель "${modelToDelete.name}" успешно удалена.`,
+    });
+
+    setIsDeleting(false);
+    setDeleteDialogOpen(false);
+    setModelToDelete(null);
+    
+    // In real app, refresh the models list here
   };
 
   const filteredModels = mockModels
@@ -140,12 +170,13 @@ export const ModelsTable = () => {
                   <SortIcon field="updatedAt" />
                 </button>
               </TableHead>
+              <TableHead className="w-24">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredModels.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-32 text-center">
+                <TableCell colSpan={5} className="h-32 text-center">
                   <p className="text-muted-foreground">
                     Модели не найдены. Нажмите "Создать модель" чтобы начать.
                   </p>
@@ -170,12 +201,31 @@ export const ModelsTable = () => {
                   <TableCell className="text-muted-foreground">
                     {new Date(model.updatedAt).toLocaleDateString("ru-RU")}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteClick(model, e)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      aria-label="Удалить модель"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        modelName={modelToDelete?.name || ""}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

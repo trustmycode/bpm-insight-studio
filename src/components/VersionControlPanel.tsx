@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Save, Rocket, ChevronDown } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Save, Rocket, ChevronDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
 interface Version {
   id: string;
@@ -26,9 +28,17 @@ const mockVersions: Version[] = [
 ];
 
 export const VersionControlPanel = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
   const [selectedVersion, setSelectedVersion] = useState(mockVersions[0].id);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const modelName = id === "new" 
+    ? "Новая модель процесса" 
+    : "Процесс согласования договора";
 
   const currentVersion = mockVersions.find((v) => v.id === selectedVersion);
 
@@ -50,6 +60,20 @@ export const VersionControlPanel = () => {
     toast.success("Модель развернута", {
       description: `Версия ${currentVersion?.number} успешно развернута в Camunda`,
     });
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    // Mock API call - replace with actual API call later
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toast.success("Модель удалена", {
+      description: `Модель "${modelName}" успешно удалена.`,
+    });
+
+    setIsDeleting(false);
+    setDeleteDialogOpen(false);
+    navigate("/models");
   };
 
   return (
@@ -129,6 +153,27 @@ export const VersionControlPanel = () => {
           </div>
         </dl>
       </div>
+
+      <Separator />
+
+      <div>
+        <Button
+          variant="ghost"
+          onClick={() => setDeleteDialogOpen(true)}
+          className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-4 w-4" />
+          Удалить модель
+        </Button>
+      </div>
+
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        modelName={modelName}
+        isDeleting={isDeleting}
+      />
     </aside>
   );
 };
